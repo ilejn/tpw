@@ -2,7 +2,7 @@
 ## *Tarantool binary Protocol c++ Wrapper*
 ## Tarantool?
 
-Yes. According to official site [official site](http://tarantool.org/) it is *A NoSQL database running in a Lua application server*
+Yes. According to [official site](http://tarantool.org/) it is *A NoSQL database running in a Lua application server*
 Because it is In Memory Data Base, the most natural competitor is Redis.
 Tarantool' evangelists say that Tarantool is better.
 Redis' evangelists say nothing because do not know about Tarantool
