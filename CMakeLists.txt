@@ -10,7 +10,7 @@ endif()
 add_definitions(-std=c++11)
 
 set(TARANTOOL_C_LIB
-  "/home/ilejn/projects/tarantool-c/"
+  "/somewhere/tarantool-c/"
   CACHE STRING "directory with libtb binary"
   )
 
