@@ -9,10 +9,19 @@ if (NOT CPP11_SUPPORTED_FLAG)
 endif()
 add_definitions(-std=c++11)
 
+set(TARANTOOL_C_INCLUDE
+  "/somewhere/tarantool-c/src"
+  CACHE STRING "directory with tp.h"
+  )
+
 set(TARANTOOL_C_LIB
   "/somewhere/tarantool-c/"
   CACHE STRING "directory with libtb binary"
   )
+
+include_directories(
+	${TARANTOOL_C_INCLUDE}
+	)
 
 link_directories(
 	${TARANTOOL_C_LIB}
