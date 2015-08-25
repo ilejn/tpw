@@ -25,10 +25,13 @@
 #include "tp.h"
 #pragma GCC diagnostic pop
 
+#include "tarantool/tarantool.h"
 extern "C"
 {
-#include "session.h"
+#include "tarantool/tnt_net.h"
+#include "tarantool/tnt_io.h"
 }
+
 
 #include "tp_ext.h"
 
@@ -561,13 +564,20 @@ namespace TPW
     friend OTStream;
   
   private:
-    struct tbses s_;
+    // struct tbses s_;
+    struct tnt_stream s_;
     typedef std::map<std::string, uint64_t> SpaceMap;
     SpaceMap space_map_;
     Response response_;
     Request request_;
     bool need_read_;  // internal status
     bool need_write_;  // internal status
+  private:
+    tnt_stream_net* get_io()
+    {
+      return TNT_SNET_CAST(&s_);
+    }
+    
 
   public:
     class Error : public std::logic_error
@@ -585,7 +595,8 @@ namespace TPW
     
     ~Connection()
     {
-      tb_sesclose(&s_);
+      tnt_close(&s_);
+      tnt_stream_free(&s_);
     }
 
     // AKA next row

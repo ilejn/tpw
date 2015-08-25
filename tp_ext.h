@@ -31,9 +31,10 @@ tp_req(struct tp *p)
 }
 
 static inline ssize_t
-tp_recv2(struct tbses *s, struct tp *p, size_t to_recv)
+tp_recv2(struct tnt_stream_net *s, struct tp *p, size_t to_recv)
 {
-  ssize_t received = tb_sesrecv(s, p->p, to_recv, false);
+  // ssize_t received = tb_sesrecv(s, p->p, to_recv, false);
+  ssize_t received = tnt_io_recv_raw(s, p->p, to_recv, false);
   p->p += received;
   return received;
 }

@@ -34,33 +34,50 @@ namespace TPW
     uint16_t port)
     : need_read_(false)
   {
-    tb_sesinit(&s_);
-    tb_sesset(&s_, TB_HOST, hostname.c_str());
-    tb_sesset(&s_, TB_PORT, port);
-    tb_sesset(&s_, TB_SENDBUF, 0);
-    tb_sesset(&s_, TB_READBUF, 0);
-    int rc = tb_sesconnect(&s_);
+    memset(static_cast<void*>(&s_), 0, sizeof(struct tnt_stream));
+    tnt_net(&s_);
+    
+
+    std::string uri = /* "test:test@"  + */  hostname + ':' + std::to_string(port);
+    tnt_set(&s_, TNT_OPT_URI, uri.c_str());
+
+    
+    int rc = tnt_connect(&s_);
+    
+      
+
+      
+    // tb_sesinit(&s_);
+    // tb_sesset(&s_, TB_HOST, hostname.c_str());
+    // tb_sesset(&s_, TB_PORT, port);
+    // tb_sesset(&s_, TB_SENDBUF, 0);
+    // tb_sesset(&s_, TB_READBUF, 0);
+    // int rc = tb_sesconnect(&s_);
     if (rc == -1)
     {
-      throw Error("Failed to connect");
+      std::string error_text = tnt_strerror(&s_);
+      throw Error("Failed to connect: " + error_text);
     }
 
-    /* handle the server's greeting */
-    const int greeting_buffer_size = 128;                        
-    char greeting_buffer[greeting_buffer_size];
+    // /* handle the server's greeting */
+    // const int greeting_buffer_size = 128;                        
+    // char greeting_buffer[greeting_buffer_size];
 
-    ssize_t greet_recv = tb_sesrecv(
-      &s_, greeting_buffer, greeting_buffer_size, 1);
-    if (greet_recv != greeting_buffer_size)
-    {
-      throw Error("Failed to receive greeting");
-    }
+    // ssize_t greet_recv = tnt_io_recv_raw(
+    //   get_io(), greeting_buffer, greeting_buffer_size, 1);
+    // if (greet_recv != greeting_buffer_size)
+    // {
+    //   throw Error("Failed to receive greeting");
+    // }
 
-    tpgreeting greet;
-    rc = tp_greeting(&greet, greeting_buffer, 128);                   
+    // tpgreeting greet;
+    // rc = tp_greeting(&greet, greeting_buffer, 128);
+    rc = tnt_authenticate(&s_);
+    
     if (rc == -1)
     {
-      throw Error("Failed to read greeting");
+      std::string error_text = tnt_strerror(&s_);
+      throw Error("Failed to authenticate: " + error_text);
     }
 
     fill_spaces();
@@ -81,7 +98,7 @@ namespace TPW
   int
   Connection::get_fd()
   {
-    return s_.fd;
+    return get_io()->fd;
   }
 
 
@@ -95,8 +112,8 @@ namespace TPW
   Connection::write()
   {
     request_.reqid();
-    if (tb_sessend(&s_, static_cast<char*>(const_cast<void*>(request_.data())),
-        request_.size()) < 0)
+    if (tnt_io_send_raw(get_io(), static_cast<char*>(const_cast<void*>(request_.data())),
+        request_.size(), 1) < 0)
     {
       throw Error("Failed to write");
     }
@@ -128,7 +145,7 @@ namespace TPW
       {
         throw Error("no memory");
       }
-      const ssize_t res = tp_recv2(&s_, response_.handle(), to_read);
+      const ssize_t res = tp_recv2(get_io(), response_.handle(), to_read);
       if (res == 0)
       {
         throw Error("eof");
@@ -246,7 +263,7 @@ namespace TPW
   Connection::select(const Space& space,
     uint32_t offset, uint32_t limit)
   {
-    tp_select(handle(), space.num(), 0 /*index*/, offset, limit); 
+    tp_select(handle(), space.num(), 0 /*ind*/, offset, TP_ITERATOR_EQ, limit); 
     need_write_ = true;
     return OTStream(*this);
   }

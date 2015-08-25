@@ -3,7 +3,7 @@
 void
 simple_test()
 {
-  TPW::Connection conn("localhost");
+  TPW::Connection conn("localhost", 3301);
   TPW::Space space = conn.get_space("tester");
 
   std::cout << "This example follows " <<

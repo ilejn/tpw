@@ -9,30 +9,43 @@ if (NOT CPP11_SUPPORTED_FLAG)
 endif()
 add_definitions(-std=c++11)
 
-set(TARANTOOL_C_INCLUDE
-  "/somewhere/tarantool-c/src"
+set(TARANTOOL_C_INCLUDE_DIR
+  "/somewhere/tarantool-c/src/include"
   CACHE STRING "directory with tp.h"
   )
 
-set(TARANTOOL_C_LIB
+set(TARANTOOL_C_THIRD_PARTY
+  "/somewhere/tarantool-c/src/third_party"
+  CACHE STRING "directory with third party stuff"
+  )
+
+set(TARANTOOL_C_LIBRARIES
   "/somewhere/tarantool-c/"
   CACHE STRING "directory with libtb binary"
   )
 
+set(MSGPUCK_INCLUDE_DIR
+  "/somewhere/tarantool-c/src/third_party/msgpuck"
+  CACHE STRING "directory with msgpuck.h"
+  )
+
 include_directories(
-	${TARANTOOL_C_INCLUDE}
+	${TARANTOOL_C_INCLUDE_DIR}
+	${TARANTOOL_C_THIRD_PARTY}
+	${MSGPUCK_INCLUDE_DIR}
 	)
 
 link_directories(
-	${TARANTOOL_C_LIB}
+	${TARANTOOL_C_LIBRARIES}
 	)
 
 add_library(tpw
 	tpw.cpp
 	)
 
-target_link_libraries(tpw
-	LINK_PRIVATE	tb
+target_link_libraries(tpw	LINK_PRIVATE
+	tarantoolnet
+	tarantool
 	)
 
 add_executable(tpwtest 
