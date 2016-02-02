@@ -22,14 +22,15 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic warning "-fpermissive"
-#include "tp.h"
+#include <tp.h>
 #pragma GCC diagnostic pop
 
-#include "tarantool/tarantool.h"
+#include <tarantool/tarantool.h>
 extern "C"
 {
-#include "tarantool/tnt_net.h"
-#include "tarantool/tnt_io.h"
+#include <tarantool/tnt_net.h>
+#include <tarantool/tnt_io.h>
+#include <tarantool/tnt_auth.h>
 }
 
 
@@ -191,27 +192,27 @@ namespace TPW
     {
     }
 
-    OTStream
-    insert(const Space& space);
+    // OTStream
+    // insert(const Space& space);
 
-    OTStream
-    del(const Space& space);
+    // OTStream
+    // del(const Space& space);
   
-    OTStream
-    call(const std::string& name);
+    // OTStream
+    // call(const std::string& name);
 
-    OTStream
-    call_tuple(const std::string& name);
+    // OTStream
+    // call_tuple(const std::string& name);
 
-    OTStream
-    auto_increment(const Space& space);
+    // OTStream
+    // auto_increment(const Space& space);
 
-    OTStream
-    select(const Space& space, 
-      uint32_t offset = 0, uint32_t limit = 100);
+    // OTStream
+    // select(const Space& space, 
+    //   uint32_t offset = 0, uint32_t limit = 100);
 
-    OTStream
-    update(const Space& space);
+    // OTStream
+    // update(const Space& space);
 
     void
     request_init()
@@ -377,10 +378,15 @@ namespace TPW
     ITStream&
     operator>>(bool& b);
 
+    
+    template <typename... Args> 
+    ITStream&
+    operator>>(std::tuple<Args...>&);
+    
     // skip one filed (column)
     ITStream&
     skip();
-
+    
     // proceed to next row
     ITStream&
     next_tuple();
@@ -393,6 +399,9 @@ namespace TPW
     {
       return f(*this);
     }
+  private:
+    template <int Index, int Max, typename... Args>
+    struct Binder;
   };
 
 
@@ -486,9 +495,16 @@ namespace TPW
     OTStream&
     operator<<(const UpdateOp<V>& f);
 
+    template <typename... Args> 
+    OTStream&
+    operator<<(const std::tuple<Args...>&);
+    
     // make it private !!!
     ITStream
     get_itstream();
+
+    template <int Index, int Max, typename... Args>
+    struct Binder;
   };
 
 
@@ -637,6 +653,8 @@ namespace TPW
     OTStream
     insert(const Space& space);
   
+    OTStream
+    replace(const Space& space);
 
     OTStream
     del(const Space& space);
@@ -645,13 +663,25 @@ namespace TPW
     OTStream
     call(const std::string& name);
 
-    /// function that accepts tuple call
     OTStream
     call_tuple(const std::string& name);
   
     OTStream
     call_table(const std::string& name);
-  
+
+    // call with variable arguments
+    template <typename... Args> 
+    void
+    call_execute(const std::string& name, Args... args);
+      
+    template <typename... Args> inline
+    void
+    call_tuple_execute(const std::string& name, Args... args);
+      
+    template <typename... Args> inline
+    void
+    call_table_execute(const std::string& name, Args... args);
+
 
     OTStream
     auto_increment(const Space& space);
@@ -727,6 +757,14 @@ namespace TPW
     {
       return request_.handle();
     }
+
+    template <typename Arg, typename... ArgTail> inline
+    void
+    call_pass(OTStream&& ots, Arg arg, ArgTail... arg_tail);
+    
+    template <typename Arg> inline
+    void
+    call_pass(OTStream&& ots, Arg arg);
   };
 
   typedef std::vector<Connection*> ConnPtrVector;
@@ -752,7 +790,8 @@ namespace TPW
     }
   };
 
-    /// manipulators
+//////////////////////////////////////////////////////
+  /// manipulators
   // end of request 
   ITStream ENDR(OTStream& ots);
 
@@ -764,6 +803,11 @@ namespace TPW
   
   // next tuple (row)
   ITStream& NEXT(ITStream& ots);
+  
+//////////////////////////////////////////////////////
+  /// Query interface
+
+  
 }
 
 #include "tpw.ipp"

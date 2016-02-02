@@ -44,9 +44,6 @@ namespace TPW
     
     int rc = tnt_connect(&s_);
     
-      
-
-      
     // tb_sesinit(&s_);
     // tb_sesset(&s_, TB_HOST, hostname.c_str());
     // tb_sesset(&s_, TB_PORT, port);
@@ -72,7 +69,8 @@ namespace TPW
 
     // tpgreeting greet;
     // rc = tp_greeting(&greet, greeting_buffer, 128);
-    rc = tnt_authenticate(&s_);
+ //   rc = tnt_authenticate(&s_);
+    rc = tnt_deauth(&s_);
     
     if (rc == -1)
     {
@@ -212,6 +210,14 @@ namespace TPW
   Connection::insert(const Space& space)
   {
     tp_insert(handle(), space.num());
+    need_write_ = true;
+    return OTStream(*this);
+  }
+
+  OTStream
+  Connection::replace(const Space& space)
+  {
+    tp_replace(handle(), space.num());
     need_write_ = true;
     return OTStream(*this);
   }
@@ -551,7 +557,14 @@ namespace TPW
   OTStream&
   OTStream::operator<<(int64_t v)
   {
-    tp_encode_int(handle(), v);
+    if (v >= 0)
+    {
+      tp_encode_uint(handle(), v);
+    }
+    else
+    {
+      tp_encode_int(handle(), v);
+    }
     advance();
     return *this;
   }
@@ -567,7 +580,14 @@ namespace TPW
   OTStream&
   OTStream::operator<<(int32_t v)
   {
-    tp_encode_int(handle(), (int64_t)v);
+    if (v >= 0)
+    {
+      tp_encode_uint(handle(), (uint64_t)v);
+    }
+    else
+    {
+      tp_encode_int(handle(), (int64_t)v);
+    }
     advance();
     return *this;
   }

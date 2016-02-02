@@ -84,6 +84,38 @@ namespace TPW
     os << conn.response_;
   }
 
+  template
+  <
+    int Index,
+    int Max,
+    typename... Args
+    >
+  struct OTStream::Binder
+  {
+    static void
+    bind(TPW::OTStream& out, const std::tuple<Args...>& args)
+    {
+      out << std::get<Index>(args);
+      Binder<Index + 1, Max, Args...>::bind(out, args);
+    }
+  };
+
+  template
+  <
+    int Max,
+    typename... Args
+    >
+  struct OTStream::Binder<Max, Max, Args...>
+  {
+    static void
+    bind(TPW::OTStream&, const std::tuple<Args...>&)
+    {
+      return;
+    }
+  };
+  
+
+  
   template <typename V>
   OTStream&
   OTStream::operator<<(const UpdateOp<V>& f)
@@ -97,6 +129,94 @@ namespace TPW
     }
     tp_op(handle(), f.op_.c_str()[0], f.field_);
     return operator<<(f.value_);
+  }
+
+  template <typename... Args> 
+  OTStream&
+  OTStream::operator<<(const std::tuple<Args...>& args)
+  {
+    Binder<0, sizeof...(Args), Args...>::bind(*this, args);
+    return *this;
+  }
+  
+  
+
+  template
+  <
+    int Index,
+    int Max,
+    typename... Args
+    >
+  struct ITStream::Binder
+  {
+    static void
+    bind(TPW::ITStream&& in, std::tuple<Args...>& args)
+    {
+      in >> std::get<Index>(args);
+      Binder<Index + 1, Max, Args...>::bind(std::move(in), args);
+    }
+  };
+
+  template
+  <
+    int Max,
+    typename... Args
+    >
+  struct ITStream::Binder<Max, Max, Args...>
+  {
+    static void
+    bind(TPW::ITStream&& in, std::tuple<Args...>& args)
+    {
+      return;
+    }
+  };
+  
+
+  template <typename... Args> 
+  ITStream&
+  ITStream::operator>>(std::tuple<Args...>& args)
+  {
+    Binder<0, sizeof...(Args), Args...>::bind(std::move(*this), args);
+    return *this;
+  }
+  
+  template <typename Arg> inline
+  void
+  Connection::call_pass(TPW::OTStream&& ots, Arg arg)
+  {
+    ots << arg;
+  }
+  
+  template <typename Arg, typename... ArgTail> inline
+  void
+  Connection::call_pass(TPW::OTStream&& ots, Arg arg, ArgTail... arg_tail)
+  {
+    ots << arg;
+    return call_pass(std::move(ots), arg_tail...);
+  }
+  
+  template <typename... ArgTail> inline
+  void
+  Connection::call_execute(const std::string& name, ArgTail... arg_tail)
+  {
+    call_pass(std::move(call(name)), arg_tail...);
+    OTStream(*this) << TPW::FLUSH;
+  }
+  
+  template <typename... ArgTail> inline
+  void
+  Connection::call_tuple_execute(const std::string& name, ArgTail... arg_tail)
+  {
+    call_pass(std::move(call_tuple(name)), arg_tail...);
+    OTStream(*this) << TPW::FLUSH;
+  }
+
+  template <typename... ArgTail> inline
+  void
+  Connection::call_table_execute(const std::string& name, ArgTail... arg_tail)
+  {
+    call_pass(std::move(call_table(name)), arg_tail...);
+    OTStream(*this) << TPW::FLUSH;
   }
 } 
 

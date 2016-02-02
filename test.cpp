@@ -14,7 +14,7 @@ simple_test()
 
   //
   // Uncomment to start fresh
-  // conn.write( conn.call("box.space.tester:truncate") ).read();
+   conn.write( conn.call("box.space.tester:truncate") ).read();
   //
 
   try
@@ -32,6 +32,7 @@ simple_test()
       ", but lets try to go further" << std::endl;
   }
 
+  
   uint64_t metric_value;
   std::string metric_name;
   conn.select(space) << 5U << TPW::ENDR >>
@@ -40,9 +41,11 @@ simple_test()
   std::cout << "We've got value " << metric_value << " for " <<
     metric_name << std::endl;
 
+
   std::cout << "All known tester tools are:" << std::endl;
 
-  std::cout << conn.write( conn.select(space) ).read().explain();
+  std::cout << conn.write( conn.select(space) /* << 1U */).read().explain();
+  std::cout << "==" << std::endl;
   
   for(;;)
   {
@@ -57,8 +60,37 @@ simple_test()
     
     its >> id >> tool_name;
     std::cout << " > " << id << ':' << tool_name << std::endl;
+
   }
+
+  std::cout << conn.write( conn.select(space)/* << 1U*/).read().explain();
+  std::cout << "==" << std::endl;
   
+  for(;;)
+  {
+    TPW::ITStream&& its(conn.get_itstream());
+    if (!its.good())
+    {
+      std::cout << "all done" << std::endl;
+      break;
+    }
+#if 0    
+    uint64_t id;
+    std::string tool_name;
+    
+    its >> std::make_tuple(std::ref(id), std::ref(tool_name));
+    std::cout << " > " << id << ':' << tool_name << std::endl;
+#else
+    std::tuple<uint64_t, std::string> tpl;
+    its >> tpl;
+    std::cout << " > " << std::get<0>(tpl) << ':' << std::get<0>(tpl) << std::endl;
+    
+#endif    
+  }
+
+  
+  conn.call_execute("string.format", "%s_%d_%s", "string one", 10, "string two");
+  std::cout << conn.read().explain();
 }
 
 

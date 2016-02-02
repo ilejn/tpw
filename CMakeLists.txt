@@ -44,16 +44,35 @@ add_library(tpw
 	)
 
 target_link_libraries(tpw	LINK_PRIVATE
-	tarantoolnet
 	tarantool
 	)
 
-add_executable(tpwtest 
+add_executable(tpwtest
 	test.cpp
 	)
 
 target_link_libraries(tpwtest
+	tarantoolnet
 	tpw
 	)
 
+add_executable(tpwmaptest
+	maptest.cpp
+	)
+
+target_link_libraries(tpwmaptest
+	tarantoolnet
+	tpw
+	)
+
+if (NOT LIB_INSTALL_DIR)
+  set (LIB_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
+endif (NOT LIB_INSTALL_DIR)
+
+if(NOT INCLUDE_INSTALL_DIR)
+	set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include)
+endif()
+
+install (TARGETS tpw DESTINATION ${LIB_INSTALL_DIR})
+install (FILES tpw.hpp tpw.ipp tp_ext.h DESTINATION ${INCLUDE_INSTALL_DIR})
 	
